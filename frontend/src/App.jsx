@@ -3,25 +3,10 @@ import { useState, useEffect } from 'react'
 import personService from './services/persons'
 import './index.css'
 
-const Notification = ({type, message}) => {
-  if (message === null) {
-
-    return null
-  } else if (type === 'ok') {
-    
-    return (
-      <div className='info'>
-        {message}
-      </div>
-    )
-  } else {
-    
-    return (
-      <div className='error'>
-        {message}
-      </div>
-    )
-  }
+const Notification = ({message}) => {
+  if (!message) return null
+  
+  return message.status === 'success' ? <div className='info'>{message.text}</div> : <div className='error'>{message.text}</div>
 }
 
 const Contact = ({person, handleDelete}) => 
@@ -69,7 +54,6 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [tofind, setFind] = useState('')
   const [message, setMessage] = useState(null)
-  const [type, setType] = useState('')
   
   const hook = () => {
     personService
@@ -94,20 +78,16 @@ const App = () => {
           .updateOne(existingPerson.id, changedPerson)
           .then((returnedNote) => {
             setPersons(persons.map(person => person.id !== existingPerson.id ? person : returnedNote))
-            setMessage(`Person ${existingPerson.name} has been changed!`)
-            setType('ok')
-            setTimeout(() => {
-              setMessage(null)
-            }, 5000)
+            setMessage({
+              text: `Person ${existingPerson.name} has been changed!`,
+              status: 'success'})
+            setTimeout(() => { setMessage(null) }, 5000)
             setNewName('')
             setNewNumber('')
           })
           .catch(error => {
             setMessage(`Person ${existingPerson.name} has already been removed from server!`)
-            setType('error')
-            setTimeout(() => {
-              setMessage(null)
-            }, 5000)
+            setTimeout(() => { setMessage(null) }, 5000)
             setPersons(persons.filter(person => person.id !== existingPerson.id))
           })
       }
@@ -121,13 +101,21 @@ const App = () => {
         .addNew(personObject)
         .then(response => {
           setPersons(persons.concat(response.data))
-          setMessage(`Person ${newName} has been added`)
-          setType('ok')
-          setTimeout(() => {
-            setMessage(null)
-          }, 5000)
+          setMessage({
+            text: `Person ${newName} has been added`,
+            status: 'success'
+          })
+          setTimeout(() => { setMessage(null) }, 5000)
           setNewName('')
           setNewNumber('')
+        })
+        .catch(error => {
+          console.log(error.response.data.error)
+          setMessage({
+            text: error.response.data.error,
+            status: 'error'
+          })
+          setTimeout(() => { setMessage(null) }, 5000)
         })
     }
   }
@@ -157,7 +145,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Notification message={message} type={type}/>
+      <Notification message={message}/>
       <Filter tofind={tofind} handle={handleFind}/>
       <h3>Add new</h3>
       <Form addPerson={addPerson} newName={newName} newNumber={newNumber} handlePersonChange={handlePersonChange} handleNumberChange={handleNumberChange}/>
