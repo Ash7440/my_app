@@ -15,8 +15,22 @@ mongoose.connect(url)
     })
 
 const dataSchema = new mongoose.Schema({
-    name: String,
-    number: String,
+    name: {
+        type: String,
+        minLength: [3, 'Name must have 3 and more characters'],
+        required: [true, 'Name is required'],
+    },
+    number: {
+        type: String,
+        minLength: [8, 'Number must have at least 8 characters'],
+        validate: {
+            validator: (v) => {
+                return /^\d{2,3}-\d{6,}$/.test(v)
+            },
+            message: 'Nuber must have format 000-00000 or 00-000000'
+        },
+        required: [true, 'Number is required'],
+    }
 })
 
 dataSchema.set('toJSON', {
